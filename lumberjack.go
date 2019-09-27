@@ -113,6 +113,9 @@ type Logger struct {
 
 	millCh    chan bool
 	startMill sync.Once
+
+	// BackupNameFunc allows giving a custom name to backup file via function
+	BackupNameFunc func(filename string) string
 }
 
 var (
@@ -218,7 +221,13 @@ func (l *Logger) openNew() error {
 		// Copy the mode off the old logfile.
 		mode = info.Mode()
 		// move the existing file
-		newname := backupName(name, l.LocalTime)
+		var newname string
+		if l.BackupNameFunc != nil {
+			newname = l.BackupNameFunc(name)
+		} else {
+			newname = backupName(name, l.LocalTime)
+		}
+
 		if err := os.Rename(name, newname); err != nil {
 			return fmt.Errorf("can't rename log file: %s", err)
 		}
